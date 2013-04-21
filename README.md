@@ -1,4 +1,4 @@
-# Camcima PHP SOAP Client #
+# camcima PHP SOAP Client #
 
 ## Overview ##
 This is my attempt to address the shortcommings of the native PHP SOAP Client implementation (`\SoapClient`).
