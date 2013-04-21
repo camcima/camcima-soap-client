@@ -2,6 +2,10 @@
 
 namespace Camcima\Soap;
 
+use Camcima\Exception\InvalidClassMappingException;
+use Camcima\Exception\InvalidParameterException;
+use Camcima\Exception\MissingClassMappingException;
+
 /**
  * Soap Client
  *
@@ -71,7 +75,7 @@ class Client extends \SoapClient
      * @param string $wsdl
      * @param array $options
      */
-    function __construct($wsdl, array $options = null)
+    function __construct($wsdl, array $options = array())
     {
         parent::__construct($wsdl, $options);
         $this->curlOptions = array();
@@ -108,6 +112,22 @@ class Client extends \SoapClient
         $response = curl_exec($ch);
 
         return $response;
+    }
+
+    /**
+     * Maps Result XML Elements to Classes
+     * 
+     * @param \stdClass $soapResult
+     * @param array $resultClassMap
+     * @return object
+     */
+    public function mapSoapResult($soapResult, $rootClassName, array $resultClassMap = array(), $resultClassNamespace = '')
+    {
+        $objVarsNames = array_keys(get_object_vars($soapResult));
+        $rootClassName = reset($objVarsNames);
+        $soapResultObj = $this->mapObject($soapResult->$rootClassName, $rootClassName, $resultClassMap, $resultClassNamespace);
+
+        return $soapResultObj;
     }
 
     /**
@@ -235,7 +255,7 @@ class Client extends \SoapClient
     public function getSoapVariables($requestObject, $lowerCaseFirst = false, $keepNullProperties = true)
     {
         if (!is_object($requestObject)) {
-            throw new \Camcima\Exception\InvalidParameterException();
+            throw new InvalidParameterException('Parameter requestObject is not an object');
         }
         $objectName = $this->getClassNameWithoutNamespaces($requestObject);
         if ($lowerCaseFirst) {
@@ -273,5 +293,102 @@ class Client extends \SoapClient
             }
         }
         return $arr;
+    }
+
+    /**
+     * Map Remote SOAP Objects(stdClass) to local classes
+     * 
+     * @param mixed $obj Remote SOAP Object
+     * @param string $className Root (or current) class name
+     * @param array $classMap Class Mapping
+     * @param string $classNamespace Namespace where the local classes are located
+     * @return \Camcima\Soap\mappedClassName
+     * @throws MissingClassMappingException
+     * @throws InvalidClassMappingException
+     */
+    protected function mapObject($obj, $className, $classMap = array(), $classNamespace = '')
+    {
+        if (is_object($obj)) {
+
+            // Check if there is a mapping.
+            if (isset($classMap[$className])) {
+                $mappedClassName = $classMap[$className];
+            } else {
+                if ($classNamespace) {
+                    $mappedClassName = str_replace('\\\\', '\\', $classNamespace . '\\' . $className);
+                } else {
+                    throw new MissingClassMappingException('Missing mapping for element "' . $className . '"');
+                }
+            }
+
+            // Check if local class exists.
+            if (!class_exists($mappedClassName)) {
+                throw new InvalidClassMappingException('Class not found: "' . $mappedClassName . '"');
+            }
+            // Get class properties and methods.
+            $objProperties = array_keys(get_class_vars($mappedClassName));
+            $objMethods = get_class_methods($mappedClassName);
+
+            // Instantiate new mapped object.
+            $objInstance = new $mappedClassName();
+
+            // Map remote object to local object.
+            $arrObj = get_object_vars($obj);
+            foreach ($arrObj as $key => $val) {
+                $useSetter = false;
+                if (in_array('set' . $key, $objMethods)) {
+                    $useSetter = true;
+                } elseif (!in_array($key, $objProperties)) {
+                    throw new InvalidClassMappingException('Property "' . $mappedClassName . '::' . $key . '" doesn\'t exist');
+                }
+
+                // If it's not scalar, recursive call the mapping function
+                if (is_array($val) || is_object($val)) {
+                    $val = $this->mapObject($val, $key, $classMap, $classNamespace);
+                }
+
+                // If there is a setter, use it. If not, set the property directly.
+                if ($useSetter) {
+                    $setterName = 'set' . $key;
+
+                    // Check if parameter is \DateTime
+                    $reflection = new \ReflectionMethod($mappedClassName, $setterName);
+                    $params = $reflection->getParameters();
+                    if (count($params) != 1) {
+                        throw new InvalidClassMappingException('Wrong Argument Count in Setter for property ' . $key);
+                    }
+                    $param = reset($params);
+                    /* @var $param \ReflectionParameter */
+                    $paramClassName = $param->getClass()->getNamespaceName() . '\\' . $param->getClass()->getName();
+
+                    // If setter parameter is typehinted, cast the value before calling the method
+                    if ($paramClassName == '\DateTime') {
+                        $val = new \DateTime($val);
+                    }
+
+                    $objInstance->$setterName($val);
+                } else {
+                    $objInstance->$key = $val;
+                }
+            }
+            return $objInstance;
+        } elseif (is_array($obj)) {
+            // Value is array.
+            $returnArray = array();
+            // If array mapping exists, map array elements.
+            if (array_key_exists('array|' . $className, $classMap)) {
+                $className = 'array|' . $className;
+                foreach ($obj as $key => $val) {
+                    $returnArray[$key] = $this->mapObject($val, $className, $classMap, $classNamespace);
+                }
+            } else {
+                // If array mapping doesn't exist, return the array.
+                $returnArray = $obj;
+            }
+            return $returnArray;
+        } else {
+            // Value is scalar. Just return it.
+            return $obj;
+        }
     }
 }

@@ -5,6 +5,7 @@ namespace Camcima\Soap\Test;
 use Camcima\Soap\Client;
 use Camcima\Soap\Test\Fixtures\ParentClass;
 use Camcima\Soap\Test\Fixtures\ChildClass;
+use Camcima\Soap\Test\Fixtures\GetCityForecastByZIP;
 
 /**
  * SoapClientTest
@@ -154,7 +155,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('7', $eldestChildNode['age']);
         $this->assertInternalType('string', $eldestChildNode['age']);
     }
-    
+
     /**
      * testGetSoapVariablesWithOptions
      */
@@ -216,5 +217,109 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('7', $eldestChildNode['age']);
         $this->assertInternalType('string', $eldestChildNode['age']);
     }
-    
+
+    /**
+     * testDoRequest
+     */
+    public function testDoRequest()
+    {
+        $wsdlUrl = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL';
+        $actionName = 'GetCityForecastByZIP';
+
+        $soapClient = new Client($wsdlUrl);
+        $getForecastByZip = new GetCityForecastByZIP();
+        $getForecastByZip->ZIP = '90210';
+
+        $soapResult = $soapClient->GetCityForecastByZIP($getForecastByZip);
+        $resultClassmap = array(
+            'GetCityForecastByZIPResult' => '\Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult',
+            'ForecastResult' => '\Camcima\Soap\Test\Fixtures\ForecastResult',
+            'array|Forecast' => '\Camcima\Soap\Test\Fixtures\ForecastEntry',
+            'Temperatures' => '\Camcima\Soap\Test\Fixtures\Temperatures',
+            'ProbabilityOfPrecipiation' => '\Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation'
+        );
+        $getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap);
+        /* @var $getCityForecastByZIPResult \Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult', $getCityForecastByZIPResult);
+        $this->assertTrue($getCityForecastByZIPResult->Success);
+        $this->assertInternalType('string', $getCityForecastByZIPResult->ResponseText);
+        $this->assertEquals('City Found', $getCityForecastByZIPResult->ResponseText);
+        $this->assertInternalType('string', $getCityForecastByZIPResult->State);
+        $this->assertEquals('CA', $getCityForecastByZIPResult->State);
+        $this->assertInternalType('string', $getCityForecastByZIPResult->City);
+        $this->assertEquals('Beverly Hills', $getCityForecastByZIPResult->City);
+        $this->assertInternalType('string', $getCityForecastByZIPResult->WeatherStationCity);
+        $forecastResult = $getCityForecastByZIPResult->ForecastResult;
+        /* @var $forecastResult \Camcima\Soap\Test\Fixtures\ForecastResult */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ForecastResult', $forecastResult);
+        $this->assertInternalType('array', $forecastResult->Forecast);
+        $forecasts = $forecastResult->Forecast;
+        $firstForecast = reset($forecasts);
+        /* @var $firstForecast \Camcima\Soap\Test\Fixtures\ForecastEntry */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ForecastEntry', $firstForecast);
+        $this->assertInstanceOf('\DateTime', $firstForecast->Date);
+        $this->assertInternalType('int', $firstForecast->WeatherID);
+        $this->assertInternalType('string', $firstForecast->Desciption);
+        $temperatures = $firstForecast->Temperatures;
+        /* @var $temperatures \Camcima\Soap\Test\Fixtures\Temperatures */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\Temperatures', $temperatures);
+        $this->assertInternalType('string', $temperatures->MorningLow);
+        $this->assertInternalType('string', $temperatures->DaytimeHigh);
+        $probPrecipitation = $firstForecast->ProbabilityOfPrecipiation;
+        /* @var $probPrecipitation \Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation', $probPrecipitation);
+        $this->assertInternalType('string', $probPrecipitation->Nighttime);
+        $this->assertInternalType('string', $probPrecipitation->Daytime);
+    }
+
+    /**
+     * testDoRequestWithNamespace
+     */
+    public function testDoRequestWithNamespace()
+    {
+        $wsdlUrl = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL';
+        $actionName = 'GetCityForecastByZIP';
+
+        $soapClient = new Client($wsdlUrl);
+        $getForecastByZip = new GetCityForecastByZIP();
+        $getForecastByZip->ZIP = '90210';
+
+        $soapResult = $soapClient->GetCityForecastByZIP($getForecastByZip);
+        $resultClassNamespace = '\Camcima\Soap\Test\Fixtures\\';
+        $resultClassmap = array(
+            'array|Forecast' => '\Camcima\Soap\Test\Fixtures\ForecastEntry',
+        );
+        $getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap, $resultClassNamespace);
+        /* @var $getCityForecastByZIPResult \Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult', $getCityForecastByZIPResult);
+        $this->assertTrue($getCityForecastByZIPResult->Success);
+        $this->assertInternalType('string', $getCityForecastByZIPResult->ResponseText);
+        $this->assertEquals('City Found', $getCityForecastByZIPResult->ResponseText);
+        $this->assertInternalType('string', $getCityForecastByZIPResult->State);
+        $this->assertEquals('CA', $getCityForecastByZIPResult->State);
+        $this->assertInternalType('string', $getCityForecastByZIPResult->City);
+        $this->assertEquals('Beverly Hills', $getCityForecastByZIPResult->City);
+        $this->assertInternalType('string', $getCityForecastByZIPResult->WeatherStationCity);
+        $forecastResult = $getCityForecastByZIPResult->ForecastResult;
+        /* @var $forecastResult \Camcima\Soap\Test\Fixtures\ForecastResult */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ForecastResult', $forecastResult);
+        $this->assertInternalType('array', $forecastResult->Forecast);
+        $forecasts = $forecastResult->Forecast;
+        $firstForecast = reset($forecasts);
+        /* @var $firstForecast \Camcima\Soap\Test\Fixtures\ForecastEntry */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ForecastEntry', $firstForecast);
+        $this->assertInstanceOf('\DateTime', $firstForecast->Date);
+        $this->assertInternalType('int', $firstForecast->WeatherID);
+        $this->assertInternalType('string', $firstForecast->Desciption);
+        $temperatures = $firstForecast->Temperatures;
+        /* @var $temperatures \Camcima\Soap\Test\Fixtures\Temperatures */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\Temperatures', $temperatures);
+        $this->assertInternalType('string', $temperatures->MorningLow);
+        $this->assertInternalType('string', $temperatures->DaytimeHigh);
+        $probPrecipitation = $firstForecast->ProbabilityOfPrecipiation;
+        /* @var $probPrecipitation \Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation */
+        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation', $probPrecipitation);
+        $this->assertInternalType('string', $probPrecipitation->Nighttime);
+        $this->assertInternalType('string', $probPrecipitation->Daytime);
+    }
 }
