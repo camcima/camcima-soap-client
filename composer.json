@@ -11,8 +11,7 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-0": {
-            "Camcima": "src/",
-            "Camcima\\Soap\\Test": "tests/"
+            "Camcima": "src/"
         }
     }
 }
