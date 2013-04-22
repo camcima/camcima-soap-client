@@ -227,6 +227,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $actionName = 'GetCityForecastByZIP';
 
         $soapClient = new Client($wsdlUrl);
+        //$soapClient->setDebug(true);
+        //$soapClient->setDebugLogFilePath(__DIR__ . '/../../../../log/debug.log');
         $getForecastByZip = new GetCityForecastByZIP();
         $getForecastByZip->ZIP = '90210';
 
@@ -281,6 +283,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $actionName = 'GetCityForecastByZIP';
 
         $soapClient = new Client($wsdlUrl);
+        //$soapClient->setDebug(true);
+        //$soapClient->setDebugLogFilePath(__DIR__ . '/../../../../log/debug.log');
         $getForecastByZip = new GetCityForecastByZIP();
         $getForecastByZip->ZIP = '90210';
 

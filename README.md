@@ -32,7 +32,7 @@ There are a few cURL options, however, that can't be overwritten as they are ess
 <?php
 // Mandatory cURL Options
 CURLOPT_POST => true
-CURLOPT_HEADER => false
+CURLOPT_HEADER => true
 ```
 
 To get the cURL options currently in use:
@@ -86,7 +86,13 @@ The default for this setting is `true`.
 
 ### Debug ###
 
-To be implemented in future versions.
+In order to debug requests and responses, you need to set the debug mode to true and the debug file name and path.
+
+```php
+<?php
+$soapClient->setDebug(true);
+$soapClient->setDebugLogFilePath(__DIR__ . '/../../../../log/debug.log');
+```
 
 ### Result Class Mapping ###
 

@@ -70,6 +70,13 @@ class Client extends \SoapClient
     protected $debug;
 
     /**
+     * Debug Log File Path
+     * 
+     * @var string 
+     */
+    protected $debugLogFilePath;
+
+    /**
      * Constructor
      * 
      * @param string $wsdl
@@ -99,19 +106,31 @@ class Client extends \SoapClient
             'Expect:'
         );
 
-        $curlOptions = $this->getCurlOptions();
-        $curlOptions[CURLOPT_POSTFIELDS] =
-            is_object($request) ?
+        $soapRequest = is_object($request) ?
             $this->getSoapVariables($request, $this->lowerCaseFirst, $this->keepNullProperties) :
             $request;
+
+        $curlOptions = $this->getCurlOptions();
+        $curlOptions[CURLOPT_POSTFIELDS] = $soapRequest;
         $curlOptions[CURLOPT_HTTPHEADER] = $headers;
 
         $ch = curl_init($location);
         curl_setopt_array($ch, $curlOptions);
-
+        if ($this->debug) {
+            curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+        }
+        $requestDateTime = new \DateTime();
         $response = curl_exec($ch);
+        $parsedResponse = $this->parseCurlResponse($response);
+        if ($this->debug) {
+            $requestDebugMessage = curl_getinfo($ch, CURLINFO_HEADER_OUT) . $soapRequest;
+            $this->logCurlMessage($requestDebugMessage, $requestDateTime);
+            $this->logCurlMessage($response, new \DateTime());
+        }
+        $body = $parsedResponse['body'];
+        curl_close($ch);
 
-        return $response;
+        return $body;
     }
 
     /**
@@ -195,6 +214,18 @@ class Client extends \SoapClient
     }
 
     /**
+     * Set Debug Log File Path
+     * 
+     * @param string $debugLogFilePath
+     * @return \Camcima\Soap\Client
+     */
+    public function setDebugLogFilePath($debugLogFilePath)
+    {
+        $this->debugLogFilePath = $debugLogFilePath;
+        return $this;
+    }
+
+    /**
      * Use Proxy
      * 
      * @param string $host
@@ -217,7 +248,7 @@ class Client extends \SoapClient
     {
         $mandatoryOptions = array(
             CURLOPT_POST => true,
-            CURLOPT_HEADER => false
+            CURLOPT_HEADER => true
         );
 
         $defaultOptions = array(
@@ -391,4 +422,45 @@ class Client extends \SoapClient
             return $obj;
         }
     }
+
+    /**
+     * Parse cURL response into header and body
+     * 
+     * Inspired by shuber cURL wrapper.
+     * 
+     * @param string $response
+     * @return array
+     */
+    protected function parseCurlResponse($response)
+    {
+        $pattern = '|HTTP/\d\.\d.*?$.*?\r\n\r\n|ims';
+        preg_match_all($pattern, $response, $matches);
+        $header = array_pop($matches[0]);
+        # Remove headers from the response body
+        $body = str_replace($header, '', $response);
+
+        return array(
+            'header' => $header,
+            'body' => $body,
+        );
+    }
+
+    /**
+     * Log cURL Debug Message
+     * 
+     * @param string $message
+     * @param \DateTime $messageTimestamp
+     * @throws \RuntimeException
+     */
+    protected function logCurlMessage($message, \DateTime $messageTimestamp)
+    {
+        if (!$this->debugLogFilePath) {
+            throw new \RuntimeException('Debug log file path not defined.');
+        }
+        $logMessage = '[' . $messageTimestamp->format('Y-m-d H:i:s') . "] ----------------------------------------------------------\n" . $message . "\n\n";
+        $logHandle = fopen($this->debugLogFilePath, 'a+');
+        fwrite($logHandle, $logMessage);
+        fclose($logHandle);
+    }
+
 }
