@@ -303,6 +303,12 @@ class Client extends \SoapClient {
         return $this->communicationLog;
     }
 
+    /**
+     * Get Class Without Namespace Information
+     * 
+     * @param mixed $object
+     * @return string
+     */
     protected function getClassNameWithoutNamespaces($object) {
         $class = explode('\\', get_class($object));
         return end($class);
