@@ -94,6 +94,16 @@ $soapClient->setDebug(true);
 $soapClient->setDebugLogFilePath(__DIR__ . '/../../../../log/debug.log');
 ```
 
+### Last Request Communication Log ###
+
+You can get the HTTP communication log (request and response) from the last request.
+
+```php
+<?php
+$soapClient->getCommunicationLog();
+```
+
+
 ### Result Class Mapping ###
 
 PHP native implementation of SOAP client has the ability to map the SOAP return to local classes. Unfortunately it didn't work for me as expected. So I've implemented my own version of result class mapping.
