@@ -399,6 +399,8 @@ class Client extends \SoapClient {
                         }
                         $param = reset($params);
                         /* @var $param \ReflectionParameter */
+                        
+                        // Get the parameter class (if type-hinted)
                         try {
                             $paramClass = $param->getClass();
                         } catch (\ReflectionException $e) {
