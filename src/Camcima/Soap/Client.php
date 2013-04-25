@@ -374,46 +374,42 @@ class Client extends \SoapClient {
             // Map remote object to local object.
             $arrObj = get_object_vars($obj);
             foreach ($arrObj as $key => $val) {
-                $useSetter = false;
-                if (in_array('set' . $key, $objMethods)) {
-                    $useSetter = true;
-                } elseif (!in_array($key, $objProperties)) {
-                    throw new InvalidClassMappingException('Property "' . $mappedClassName . '::' . $key . '" doesn\'t exist');
-                }
-
-                // If it's not scalar, recursive call the mapping function
-                if (is_array($val) || is_object($val)) {
-                    $val = $this->mapObject($val, $key, $classMap, $classNamespace);
-                }
-
-                // If there is a setter, use it. If not, set the property directly.
-                if ($useSetter) {
-                    $setterName = 'set' . $key;
-
-                    // Check if parameter is \DateTime
-                    $reflection = new \ReflectionMethod($mappedClassName, $setterName);
-                    $params = $reflection->getParameters();
-                    if (count($params) != 1) {
-                        throw new InvalidClassMappingException('Wrong Argument Count in Setter for property ' . $key);
+                if (!is_null($val)) {
+                    $useSetter = false;
+                    if (in_array('set' . $key, $objMethods)) {
+                        $useSetter = true;
+                    } elseif (!in_array($key, $objProperties)) {
+                        throw new InvalidClassMappingException('Property "' . $mappedClassName . '::' . $key . '" doesn\'t exist');
                     }
-                    $param = reset($params);
-                    /* @var $param \ReflectionParameter */
-                    try {
-                        $paramClass = $param->getClass();
-                    } catch (\ReflectionException $e) {
-                        throw new \ReflectionException('Invalid type hint for method "' . $setterName . '"');
+
+                    // If it's not scalar, recursive call the mapping function
+                    if (is_array($val) || is_object($val)) {
+                        $val = $this->mapObject($val, $key, $classMap, $classNamespace);
                     }
-                    if ($paramClass) {
-                        $paramClassName = $paramClass->getNamespaceName() . '\\' . $param->getClass()->getName();
+
+                    // If there is a setter, use it. If not, set the property directly.
+                    if ($useSetter) {
+                        $setterName = 'set' . $key;
+
+                        // Check if parameter is \DateTime
+                        $reflection = new \ReflectionMethod($mappedClassName, $setterName);
+                        $params = $reflection->getParameters();
+                        if (count($params) != 1) {
+                            throw new InvalidClassMappingException('Wrong Argument Count in Setter for property ' . $key);
+                        }
+                        $param = reset($params);
+                        /* @var $param \ReflectionParameter */
+                        $paramClassName = $param->getClass()->getNamespaceName() . '\\' . $param->getClass()->getName();
+
                         // If setter parameter is typehinted, cast the value before calling the method
                         if ($paramClassName == '\DateTime') {
                             $val = new \DateTime($val);
                         }
-                    }
 
-                    $objInstance->$setterName($val);
-                } else {
-                    $objInstance->$key = $val;
+                        $objInstance->$setterName($val);
+                    } else {
+                        $objInstance->$key = $val;
+                    }
                 }
             }
             return $objInstance;
