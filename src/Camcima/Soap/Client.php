@@ -399,11 +399,17 @@ class Client extends \SoapClient {
                         }
                         $param = reset($params);
                         /* @var $param \ReflectionParameter */
-                        $paramClassName = $param->getClass()->getNamespaceName() . '\\' . $param->getClass()->getName();
-
-                        // If setter parameter is typehinted, cast the value before calling the method
-                        if ($paramClassName == '\DateTime') {
-                            $val = new \DateTime($val);
+                        try {
+                            $paramClass = $param->getClass();
+                        } catch (\ReflectionException $e) {
+                            throw new \ReflectionException('Invalid type hint for method "' . $setterName . '"');
+                        }
+                        if ($paramClass) {
+                            $paramClassName = $paramClass->getNamespaceName() . '\\' . $param->getClass()->getName();
+                            // If setter parameter is typehinted, cast the value before calling the method
+                            if ($paramClassName == '\DateTime') {
+                                $val = new \DateTime($val);
+                            }
                         }
 
                         $objInstance->$setterName($val);
