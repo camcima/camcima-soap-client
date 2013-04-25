@@ -118,12 +118,10 @@ class Client extends \SoapClient {
         $curlOptions = $this->getCurlOptions();
         $curlOptions[CURLOPT_POSTFIELDS] = $soapRequest;
         $curlOptions[CURLOPT_HTTPHEADER] = $headers;
+        $curlOptions[CURLINFO_HEADER_OUT] = true;
 
         $ch = curl_init($location);
         curl_setopt_array($ch, $curlOptions);
-        if ($this->debug) {
-            curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-        }
         $requestDateTime = new \DateTime();
         $response = curl_exec($ch);
         $requestMessage = curl_getinfo($ch, CURLINFO_HEADER_OUT) . $soapRequest;
