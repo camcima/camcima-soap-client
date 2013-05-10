@@ -5,13 +5,15 @@ namespace Camcima\Soap;
 use Camcima\Exception\InvalidClassMappingException;
 use Camcima\Exception\InvalidParameterException;
 use Camcima\Exception\MissingClassMappingException;
+use Camcima\Exception\ConnectionErrorException;
 
 /**
  * Soap Client
  *
  * @author Carlos Cima
  */
-class Client extends \SoapClient {
+class Client extends \SoapClient
+{
 
     /**
      * Default Values
@@ -89,7 +91,8 @@ class Client extends \SoapClient {
      * @param string $wsdl
      * @param array $options
      */
-    function __construct($wsdl, array $options = array()) {
+    function __construct($wsdl, array $options = array())
+    {
         parent::__construct($wsdl, $options);
         $this->curlOptions = array();
         $this->lowerCaseFirst = false;
@@ -100,7 +103,8 @@ class Client extends \SoapClient {
     /**
      * {@inheritDoc}
      */
-    public function __doRequest($request, $location, $action, $version, $one_way = 0) {
+    public function __doRequest($request, $location, $action, $version, $one_way = 0)
+    {
         $userAgent = $this->userAgent ? : self::DEFAULT_USER_AGENT;
 
         $headers = array(
@@ -112,8 +116,8 @@ class Client extends \SoapClient {
         );
 
         $soapRequest = is_object($request) ?
-                $this->getSoapVariables($request, $this->lowerCaseFirst, $this->keepNullProperties) :
-                $request;
+            $this->getSoapVariables($request, $this->lowerCaseFirst, $this->keepNullProperties) :
+            $request;
 
         $curlOptions = $this->getCurlOptions();
         $curlOptions[CURLOPT_POSTFIELDS] = $soapRequest;
@@ -123,7 +127,17 @@ class Client extends \SoapClient {
         $ch = curl_init($location);
         curl_setopt_array($ch, $curlOptions);
         $requestDateTime = new \DateTime();
-        $response = curl_exec($ch);
+        try {
+            $response = curl_exec($ch);
+        } catch (\Exception $e) {
+            throw new ConnectionErrorException('Soap Connection Error: ' . $e->getMessage(), $e->getCode(), $e);
+        }
+        if (curl_errno($ch)) {
+            throw new ConnectionErrorException('Soap Connection Error: ' . curl_error($ch), curl_errno($ch));
+        }
+        if ($response === false) {
+            throw new ConnectionErrorException('Soap Connection Error: Empty Response');
+        }
         $requestMessage = curl_getinfo($ch, CURLINFO_HEADER_OUT) . $soapRequest;
         $parsedResponse = $this->parseCurlResponse($response);
         if ($this->debug) {
@@ -144,7 +158,11 @@ class Client extends \SoapClient {
      * @param array $resultClassMap
      * @return object
      */
-    public function mapSoapResult($soapResult, $rootClassName, array $resultClassMap = array(), $resultClassNamespace = '') {
+    public function mapSoapResult($soapResult, $rootClassName, array $resultClassMap = array(), $resultClassNamespace = '')
+    {
+        if (!is_object($soapResult)) {
+            throw new InvalidParameterException('Soap Result is not an object');
+        }
         $objVarsNames = array_keys(get_object_vars($soapResult));
         $rootClassName = reset($objVarsNames);
         $soapResultObj = $this->mapObject($soapResult->$rootClassName, $rootClassName, $resultClassMap, $resultClassNamespace);
@@ -158,7 +176,8 @@ class Client extends \SoapClient {
      * @param array $curlOptions
      * @return \Camcima\Soap\Client
      */
-    public function setCurlOptions(array $curlOptions) {
+    public function setCurlOptions(array $curlOptions)
+    {
         $this->curlOptions = $curlOptions;
         return $this;
     }
@@ -169,7 +188,8 @@ class Client extends \SoapClient {
      * @param string $userAgent
      * @return \Camcima\Soap\Client
      */
-    public function setUserAgent($userAgent = self::DEFAULT_USER_AGENT) {
+    public function setUserAgent($userAgent = self::DEFAULT_USER_AGENT)
+    {
         $this->userAgent = $userAgent;
         return $this;
     }
@@ -182,7 +202,8 @@ class Client extends \SoapClient {
      * @param boolean $lowerCaseFirst
      * @return \Camcima\Soap\Client
      */
-    public function setLowerCaseFirst($lowerCaseFirst) {
+    public function setLowerCaseFirst($lowerCaseFirst)
+    {
         $this->lowerCaseFirst = $lowerCaseFirst;
         return $this;
     }
@@ -195,7 +216,8 @@ class Client extends \SoapClient {
      * @param boolean $keepNullProperties
      * @return \Camcima\Soap\Client
      */
-    public function setKeepNullProperties($keepNullProperties) {
+    public function setKeepNullProperties($keepNullProperties)
+    {
         $this->keepNullProperties = $keepNullProperties;
         return $this;
     }
@@ -206,7 +228,8 @@ class Client extends \SoapClient {
      * @param boolean $debug
      * @return \Camcima\Soap\Client
      */
-    public function setDebug($debug = false) {
+    public function setDebug($debug = false)
+    {
         $this->debug = $debug;
         return $this;
     }
@@ -217,7 +240,8 @@ class Client extends \SoapClient {
      * @param string $debugLogFilePath
      * @return \Camcima\Soap\Client
      */
-    public function setDebugLogFilePath($debugLogFilePath) {
+    public function setDebugLogFilePath($debugLogFilePath)
+    {
         $this->debugLogFilePath = $debugLogFilePath;
         return $this;
     }
@@ -229,7 +253,8 @@ class Client extends \SoapClient {
      * @param int $port
      * @return \Camcima\Soap\Client
      */
-    public function useProxy($host = self::DEFAULT_PROXY_HOST, $port = self::DEFAULT_PROXY_PORT) {
+    public function useProxy($host = self::DEFAULT_PROXY_HOST, $port = self::DEFAULT_PROXY_PORT)
+    {
         $this->proxyHost = $host;
         $this->proxyPort = $port;
         return $this;
@@ -240,7 +265,8 @@ class Client extends \SoapClient {
      * 
      * @return array
      */
-    public function getCurlOptions() {
+    public function getCurlOptions()
+    {
         $mandatoryOptions = array(
             CURLOPT_POST => true,
             CURLOPT_HEADER => true
@@ -278,7 +304,8 @@ class Client extends \SoapClient {
      * @param boolean $keepNullProperties Keep null object properties when building the request parameters
      * @return array
      */
-    public function getSoapVariables($requestObject, $lowerCaseFirst = false, $keepNullProperties = true) {
+    public function getSoapVariables($requestObject, $lowerCaseFirst = false, $keepNullProperties = true)
+    {
         if (!is_object($requestObject)) {
             throw new InvalidParameterException('Parameter requestObject is not an object');
         }
@@ -297,7 +324,8 @@ class Client extends \SoapClient {
      * 
      * @return string
      */
-    public function getCommunicationLog() {
+    public function getCommunicationLog()
+    {
         return $this->communicationLog;
     }
 
@@ -307,7 +335,8 @@ class Client extends \SoapClient {
      * @param mixed $object
      * @return string
      */
-    protected function getClassNameWithoutNamespaces($object) {
+    protected function getClassNameWithoutNamespaces($object)
+    {
         $class = explode('\\', get_class($object));
         return end($class);
     }
@@ -321,7 +350,8 @@ class Client extends \SoapClient {
      * @param boolean $keepNullProperties Keep null object properties when building the request parameters
      * @return array
      */
-    protected function objectToArray($obj, $keepNullProperties = true) {
+    protected function objectToArray($obj, $keepNullProperties = true)
+    {
         $arrObj = is_object($obj) ? get_object_vars($obj) : $obj;
         foreach ($arrObj as $key => $val) {
             $val = (is_array($val) || is_object($val)) ? $this->objectToArray($val, $keepNullProperties) : $val;
@@ -344,7 +374,8 @@ class Client extends \SoapClient {
      * @throws MissingClassMappingException
      * @throws InvalidClassMappingException
      */
-    protected function mapObject($obj, $className, $classMap = array(), $classNamespace = '') {
+    protected function mapObject($obj, $className, $classMap = array(), $classNamespace = '')
+    {
         if (is_object($obj)) {
 
             // Check if there is a mapping.
@@ -397,7 +428,7 @@ class Client extends \SoapClient {
                         }
                         $param = reset($params);
                         /* @var $param \ReflectionParameter */
-                        
+
                         // Get the parameter class (if type-hinted)
                         try {
                             $paramClass = $param->getClass();
@@ -447,7 +478,8 @@ class Client extends \SoapClient {
      * @param string $response
      * @return array
      */
-    protected function parseCurlResponse($response) {
+    protected function parseCurlResponse($response)
+    {
         $pattern = '|HTTP/\d\.\d.*?$.*?\r\n\r\n|ims';
         preg_match_all($pattern, $response, $matches);
         $header = array_pop($matches[0]);
@@ -467,7 +499,8 @@ class Client extends \SoapClient {
      * @param \DateTime $messageTimestamp
      * @throws \RuntimeException
      */
-    protected function logCurlMessage($message, \DateTime $messageTimestamp) {
+    protected function logCurlMessage($message, \DateTime $messageTimestamp)
+    {
         if (!$this->debugLogFilePath) {
             throw new \RuntimeException('Debug log file path not defined.');
         }
