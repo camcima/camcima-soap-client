@@ -76,7 +76,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertArrayHasKey(CURLOPT_HEADER, $curlOptions2);
         $this->assertArrayHasKey(CURLOPT_SSL_VERIFYPEER, $curlOptions2);
         $this->assertTrue($curlOptions2[CURLOPT_CRLF]);
-        $this->assertFalse($curlOptions2[CURLOPT_HEADER]);
+        $this->assertTrue($curlOptions2[CURLOPT_HEADER]);
         $this->assertTrue($curlOptions2[CURLOPT_SSL_VERIFYPEER]);
     }
 
