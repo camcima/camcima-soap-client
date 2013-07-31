@@ -23,7 +23,7 @@ $curlOptions = array(
     CURLOPT_SSL_VERIFYPEER => true
 );
 $soapClient = new \Camcima\Soap\Client($wsdl, $options);
-$soapClient->setCurlOptions($curlOptionsFixture);
+$soapClient->setCurlOptions($curlOptions);
 ```
 
 There are a few cURL options, however, that can't be overwritten as they are essential for the wrapper:
