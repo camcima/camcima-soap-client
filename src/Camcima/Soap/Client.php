@@ -23,6 +23,13 @@ class Client extends \SoapClient
     const DEFAULT_PROXY_PORT = 8888;
 
     /**
+     * Cookies
+     * 
+     * @var array
+     */
+    protected $cookies = array();
+	
+    /**
      * User Agent
      * 
      * @var string
@@ -99,7 +106,7 @@ class Client extends \SoapClient
         $this->keepNullProperties = true;
         $this->debug = false;
     }
-
+	
     /**
      * {@inheritDoc}
      */
@@ -123,6 +130,7 @@ class Client extends \SoapClient
         $curlOptions[CURLOPT_POSTFIELDS] = $soapRequest;
         $curlOptions[CURLOPT_HTTPHEADER] = $headers;
         $curlOptions[CURLINFO_HEADER_OUT] = true;
+		$curlOptions[CURLOPT_COOKIE] = $this->parseCookies();
 
         $ch = curl_init($location);
         curl_setopt_array($ch, $curlOptions);
@@ -170,6 +178,29 @@ class Client extends \SoapClient
         return $soapResultObj;
     }
 
+	/**
+	 * {@inheritDoc}
+	 */
+	public function __setCookie( $name, $value = null )
+	{
+		$this->cookies[ $name ] = $value;
+	}
+	
+	/**
+	 * Parse the cookies into a valid HTTP Cookie header value
+	 * 
+	 * @return string
+	 */
+	protected function parseCookies ()
+	{
+		$cookie = '';
+		
+		foreach( $this->cookies as $name => $value )
+			$cookie .= $name . '=' . $value . '; ';
+				
+		return rtrim( $cookie, ';' );
+	}
+	
     /**
      * Set cURL Options
      * 
