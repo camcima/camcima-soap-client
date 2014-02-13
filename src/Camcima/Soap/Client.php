@@ -38,7 +38,7 @@ class Client extends \SoapClient
     protected $curlOptions;
 
     /**
-     * Proxy Port
+     * Proxy Type
      *
      * @var int
      */
