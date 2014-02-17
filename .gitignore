@@ -1,3 +1,5 @@
 /vendor
 /phpunit.xml
 log
+/nbproject/private/
+/nbproject/
