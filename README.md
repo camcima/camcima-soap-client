@@ -53,6 +53,15 @@ $soapClient->useProxy('proxy.local', 8080, CURLPROXY_SOCKS5);
 
 The default hostname, port and type for this methods are `localhost`, `8888` and `CURLPROXY_HTTP`, which is the default binding for Fiddler Web Debugging Proxy ([http://fiddler2.com/](http://fiddler2.com/)).
 
+### Authentication ###
+
+In order to use HTTP Authentication, use SoapClient original `login` and `password` options. The cURL client will get it from there.
+    
+```php
+<?php
+$soapClient = new Client($wsdlUrl, ['login' => 'joelogin', 'password' => 'joepassword']);
+```
+
 ### User Agent ###
 
 It's possible to customize the User Agent used by the client:

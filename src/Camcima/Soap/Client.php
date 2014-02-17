@@ -14,7 +14,6 @@ use Camcima\Exception\ConnectionErrorException;
  */
 class Client extends \SoapClient
 {
-
     /**
      * Default Values
      */
@@ -94,6 +93,13 @@ class Client extends \SoapClient
     protected $communicationLog;
 
     /**
+     * Original SoapClient Options
+     * 
+     * @var array 
+     */
+    protected $soapOptions;
+
+    /**
      * Constructor
      * 
      * @param string $wsdl
@@ -102,6 +108,7 @@ class Client extends \SoapClient
     function __construct($wsdl, array $options = array())
     {
         parent::__construct($wsdl, $options);
+        $this->soapOptions = $options;
         $this->curlOptions = array();
         $this->lowerCaseFirst = false;
         $this->keepNullProperties = true;
@@ -131,6 +138,10 @@ class Client extends \SoapClient
         $curlOptions[CURLOPT_POSTFIELDS] = $soapRequest;
         $curlOptions[CURLOPT_HTTPHEADER] = $headers;
         $curlOptions[CURLINFO_HEADER_OUT] = true;
+
+        if (isset($this->soapOptions['login']) && isset($this->soapOptions['password'])) {
+            $curlOptions[CURLOPT_USERPWD] = $this->soapOptions['login'] . ':' . $this->soapOptions['password'];
+        }
 
         $ch = curl_init($location);
         curl_setopt_array($ch, $curlOptions);
