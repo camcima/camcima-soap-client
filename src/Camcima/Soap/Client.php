@@ -19,6 +19,7 @@ class Client extends \SoapClient
      * Default Values
      */
     const DEFAULT_USER_AGENT = 'CamcimaSoapClient/1.0';
+    const DEFAULT_PROXY_TYPE = CURLPROXY_HTTP;
     const DEFAULT_PROXY_HOST = 'localhost';
     const DEFAULT_PROXY_PORT = 8888;
 
@@ -35,6 +36,13 @@ class Client extends \SoapClient
      * @var array 
      */
     protected $curlOptions;
+
+    /**
+     * Proxy Type
+     *
+     * @var int
+     */
+    protected $proxyType;
 
     /**
      * Proxy Host
@@ -153,9 +161,12 @@ class Client extends \SoapClient
 
     /**
      * Maps Result XML Elements to Classes
-     * 
+     *
      * @param \stdClass $soapResult
+     * @param $rootClassName
      * @param array $resultClassMap
+     * @param string $resultClassNamespace
+     * @throws \Camcima\Exception\InvalidParameterException
      * @return object
      */
     public function mapSoapResult($soapResult, $rootClassName, array $resultClassMap = array(), $resultClassNamespace = '')
@@ -248,13 +259,15 @@ class Client extends \SoapClient
 
     /**
      * Use Proxy
-     * 
+     *
      * @param string $host
      * @param int $port
+     * @param int $type
      * @return \Camcima\Soap\Client
      */
-    public function useProxy($host = self::DEFAULT_PROXY_HOST, $port = self::DEFAULT_PROXY_PORT)
+    public function useProxy($host = self::DEFAULT_PROXY_HOST, $port = self::DEFAULT_PROXY_PORT, $type = self::DEFAULT_PROXY_TYPE)
     {
+        $this->proxyType = $type;
         $this->proxyHost = $host;
         $this->proxyPort = $port;
         return $this;
@@ -286,6 +299,7 @@ class Client extends \SoapClient
             } else {
                 $proxyPort = 8888;
             }
+            $mergedArray[CURLOPT_PROXYTYPE] = $this->proxyType;
             $mergedArray[CURLOPT_PROXY] = $this->proxyHost;
             $mergedArray[CURLOPT_PROXYPORT] = $proxyPort;
         }
@@ -295,13 +309,14 @@ class Client extends \SoapClient
 
     /**
      * Get SOAP Request Variables
-     * 
+     *
      * Prepares request parameters to be
      * sent in the SOAP Request Body.
-     * 
+     *
      * @param object $requestObject
      * @param boolean $lowerCaseFirst Lowercase first character of the root element name
      * @param boolean $keepNullProperties Keep null object properties when building the request parameters
+     * @throws \Camcima\Exception\InvalidParameterException
      * @return array
      */
     public function getSoapVariables($requestObject, $lowerCaseFirst = false, $keepNullProperties = true)
@@ -342,7 +357,7 @@ class Client extends \SoapClient
     }
 
     /**
-     * Convert Objet to Array
+     * Convert Object to Array
      * 
      * This method omits null value properties
      * 
@@ -352,6 +367,7 @@ class Client extends \SoapClient
      */
     protected function objectToArray($obj, $keepNullProperties = true)
     {
+        $arr = array();
         $arrObj = is_object($obj) ? get_object_vars($obj) : $obj;
         foreach ($arrObj as $key => $val) {
             $val = (is_array($val) || is_object($val)) ? $this->objectToArray($val, $keepNullProperties) : $val;
@@ -365,14 +381,15 @@ class Client extends \SoapClient
 
     /**
      * Map Remote SOAP Objects(stdClass) to local classes
-     * 
+     *
      * @param mixed $obj Remote SOAP Object
      * @param string $className Root (or current) class name
      * @param array $classMap Class Mapping
      * @param string $classNamespace Namespace where the local classes are located
+     * @throws \Camcima\Exception\MissingClassMappingException
+     * @throws \Camcima\Exception\InvalidClassMappingException
+     * @throws \ReflectionException
      * @return \Camcima\Soap\mappedClassName
-     * @throws MissingClassMappingException
-     * @throws InvalidClassMappingException
      */
     protected function mapObject($obj, $className, $classMap = array(), $classNamespace = '')
     {
