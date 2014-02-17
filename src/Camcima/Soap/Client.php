@@ -145,7 +145,7 @@ class Client extends \SoapClient
         $curlOptions[CURLOPT_POSTFIELDS] = $soapRequest;
         $curlOptions[CURLOPT_HTTPHEADER] = $headers;
         $curlOptions[CURLINFO_HEADER_OUT] = true;
-		$curlOptions[CURLOPT_COOKIE] = $this->parseCookies();
+        $curlOptions[CURLOPT_COOKIE] = $this->parseCookies();
 
         if (isset($this->soapOptions['login']) && isset($this->soapOptions['password'])) {
             $curlOptions[CURLOPT_USERPWD] = $this->soapOptions['login'] . ':' . $this->soapOptions['password'];

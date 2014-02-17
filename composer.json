@@ -1,6 +1,6 @@
 {
-    "name": "niels-janssen/soap-client",
-    "description": "Wrapper around PHP SoapClient class, based on camcima/camcima-soap-client",
+    "name": "camcima/soap-client",
+    "description": "Wrapper around PHP SoapClient class",
 	"keywords": ["library", "soap", "client", "wrapper", "webservice", "wsdl", "soapclient"],
     "type": "library",
     "require": {
