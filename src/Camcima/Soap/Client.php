@@ -18,6 +18,7 @@ class Client extends \SoapClient
      * Default Values
      */
     const DEFAULT_USER_AGENT = 'CamcimaSoapClient/1.0';
+    const DEFAULT_CONTENT_TYPE = 'text/xml; charset=utf-8';
     const DEFAULT_PROXY_TYPE = CURLPROXY_HTTP;
     const DEFAULT_PROXY_HOST = 'localhost';
     const DEFAULT_PROXY_PORT = 8888;
@@ -35,6 +36,13 @@ class Client extends \SoapClient
      * @var string
      */
     protected $userAgent;
+    
+    /**
+     * Content Type
+     * 
+     * @var string
+     */
+    protected $contentType;
 
     /**
      * cURL Options
@@ -128,11 +136,12 @@ class Client extends \SoapClient
     public function __doRequest($request, $location, $action, $version, $one_way = 0)
     {
         $userAgent = $this->userAgent ? : self::DEFAULT_USER_AGENT;
+        $contentType = $this->contentType ? : self::DEFAULT_CONTENT_TYPE;
 
         $headers = array(
             'Connection: Close',
             'User-Agent: ' . $userAgent,
-            'Content-Type: text/xml',
+            'Content-Type: ' . $contentType,
             'SOAPAction: "' . $action . '"',
             'Expect:'
         );
@@ -244,6 +253,18 @@ class Client extends \SoapClient
     public function setUserAgent($userAgent = self::DEFAULT_USER_AGENT)
     {
         $this->userAgent = $userAgent;
+        return $this;
+    }
+    
+    /**
+     * Set Content Type
+     * 
+     * @param string $contentType
+     * @return \Camcima\Soap\Client
+     */
+    public function setContentType($contentType = self::DEFAULT_CONTENT_TYPE)
+    {
+        $this->contentType = $contentType;
         return $this;
     }
 
