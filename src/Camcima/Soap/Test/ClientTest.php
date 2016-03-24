@@ -240,7 +240,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'Temperatures' => '\Camcima\Soap\Test\Fixtures\Temperatures',
             'ProbabilityOfPrecipiation' => '\Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation'
         );
-        $getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap);
+        $getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap, '', true);
         /* @var $getCityForecastByZIPResult \Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult */
         $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult', $getCityForecastByZIPResult);
         $this->assertTrue($getCityForecastByZIPResult->Success);
@@ -293,7 +293,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $resultClassmap = array(
             'array|Forecast' => '\Camcima\Soap\Test\Fixtures\ForecastEntry',
         );
-        $getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap, $resultClassNamespace);
+        $getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap, $resultClassNamespace, true);
         /* @var $getCityForecastByZIPResult \Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult */
         $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult', $getCityForecastByZIPResult);
         $this->assertTrue($getCityForecastByZIPResult->Success);

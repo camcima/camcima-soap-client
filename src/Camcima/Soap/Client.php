@@ -194,17 +194,28 @@ class Client extends \SoapClient
      * @param $rootClassName
      * @param array $resultClassMap
      * @param string $resultClassNamespace
-     * @throws \Camcima\Exception\InvalidParameterException
+     * @param bool $skipRootObject
+     *
      * @return object
+     *
+     * @throws InvalidClassMappingException
+     * @throws InvalidParameterException
+     * @throws MissingClassMappingException
+     * @throws \ReflectionException
      */
-    public function mapSoapResult($soapResult, $rootClassName, array $resultClassMap = array(), $resultClassNamespace = '')
+    public function mapSoapResult($soapResult, $rootClassName, array $resultClassMap = array(), $resultClassNamespace = '', $skipRootObject = false)
     {
         if (!is_object($soapResult)) {
             throw new InvalidParameterException('Soap Result is not an object');
         }
-        $objVarsNames = array_keys(get_object_vars($soapResult));
-        $rootClassName = reset($objVarsNames);
-        $soapResultObj = $this->mapObject($soapResult->$rootClassName, $rootClassName, $resultClassMap, $resultClassNamespace);
+
+        if ($skipRootObject) {
+            $objVarsNames = array_keys(get_object_vars($soapResult));
+            $rootClassName = reset($objVarsNames);
+            $soapResultObj = $this->mapObject($soapResult->$rootClassName, $rootClassName, $resultClassMap, $resultClassNamespace);
+        } else {
+            $soapResultObj = $this->mapObject($soapResult, $rootClassName, $resultClassMap, $resultClassNamespace);
+        }
 
         return $soapResultObj;
     }

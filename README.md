@@ -134,7 +134,7 @@ $resultClassmap = array(
     'Temperatures' => '\Camcima\Soap\Test\Fixtures\Temperatures',
     'ProbabilityOfPrecipiation' => '\Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation'
 );
-$getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap);
+$getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap, true);
 ```
 
 The native SOAP client returns all objects as Standard Classes (`StdClass`) and my mapping function "casts" them to the mapped local classes. This functions is based on the property name that holds the standard class object. This works pretty well in most scenarios, but when there is an array of objects, it needs a special config:
@@ -156,6 +156,17 @@ If all your result classes reside in the same namespace, there is no need to map
 <?php
 $resultClassNamespace = '\MyProject\SOAP\Result\\';
 ```
+
+### Skip Root Object ###
+
+Sometimes, the webservice will return an object with only one property, so it doesn't make a lot of sense to create a wrapper object just for that. In that case, you can use the `skipRootObject` parameter in the `mapSoapResult` method to skip the root object and return the inner property instead.
+
+```php
+<?php
+
+public function mapSoapResult($soapResult, $rootClassName, array $resultClassMap = array(), $resultClassNamespace = '', $skipRootObject = false);
+```
+
 
 ## Improvements ##
 
