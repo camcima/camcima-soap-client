@@ -148,7 +148,11 @@ $mapping = array(
 
 The name of the property which holds the array serves as the marker for the mapping. You also need to prefix this element name with `array` and use pipe (`|`) to separate them.
 
-If we get array of simple type (<xsd:element name="ForecastIcons" type="tns:ArrayOfString"/>) we need mapping like, so it will extract data from `data` attribute (doesn't reqire SOAP_SINGLE_ELEMENT_ARRAYS feature in SoapClient)
+If we get array of simple type like
+```xml
+<xsd:element name="ForecastIcons" type="tns:ArrayOfString"/>
+```
+we need mapping to array, so it will extract data from `item` attribute (doesn't require `SOAP_SINGLE_ELEMENT_ARRAYS` feature in SoapClient)
 ```php
 <?php
 $mapping = array(
