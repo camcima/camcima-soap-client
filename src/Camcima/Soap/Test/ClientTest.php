@@ -326,4 +326,22 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertInternalType('string', $probPrecipitation->Nighttime);
         $this->assertInternalType('string', $probPrecipitation->Daytime);
     }
+
+
+    /**
+     * testDoRequestWithArrayResponse
+     */
+    public function testDoRequestWithArrayResponse()
+    {
+        $wsdlUrl = 'http://soap-server.pacura.pl/?wsdl';
+        $soapClient = new Client($wsdlUrl);
+
+        $soapResponse = $soapClient->getForecastIcons();
+        $icons = $soapClient->mapSoapResult($soapResponse, 'getForecastIconsOut', array('getForecastIconsOut' => 'array'));
+        $this->assertInternalType('array', $icons);
+        $this->assertArrayHasKey(0, $icons);
+        $this->assertInternalType('string', $icons[0]);
+        $this->assertEquals('partly-cloudly.png', $icons[0]);
+    }
+
 }

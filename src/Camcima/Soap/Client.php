@@ -25,29 +25,29 @@ class Client extends \SoapClient
 
     /**
      * Cookies
-     * 
+     *
      * @var array
      */
     protected $cookies = array();
-	
+
     /**
      * User Agent
-     * 
+     *
      * @var string
      */
     protected $userAgent;
-    
+
     /**
      * Content Type
-     * 
+     *
      * @var string
      */
     protected $contentType;
 
     /**
      * cURL Options
-     * 
-     * @var array 
+     *
+     * @var array
      */
     protected $curlOptions;
 
@@ -60,63 +60,63 @@ class Client extends \SoapClient
 
     /**
      * Proxy Host
-     * 
-     * @var string 
+     *
+     * @var string
      */
     protected $proxyHost;
 
     /**
      * Proxy Port
-     * 
-     * @var int 
+     *
+     * @var int
      */
     protected $proxyPort;
 
     /**
      * Lowercase first character of the root element name
-     * 
-     * @var boolean 
+     *
+     * @var boolean
      */
     protected $lowerCaseFirst;
 
     /**
      * Keep empty object properties when building the request parameters
-     *  
-     * @var boolean 
+     *
+     * @var boolean
      */
     protected $keepNullProperties;
 
     /**
      * Debug Mode
-     * 
-     * @var boolean 
+     *
+     * @var boolean
      */
     protected $debug;
 
     /**
      * Debug Log File Path
-     * 
-     * @var string 
+     *
+     * @var string
      */
     protected $debugLogFilePath;
 
     /**
      * Communication Log of Last Request
-     * 
-     * @var string 
+     *
+     * @var string
      */
     protected $communicationLog;
 
     /**
      * Original SoapClient Options
-     * 
-     * @var array 
+     *
+     * @var array
      */
     protected $soapOptions;
 
     /**
      * Constructor
-     * 
+     *
      * @param string $wsdl
      * @param array $options
      */
@@ -129,7 +129,7 @@ class Client extends \SoapClient
         $this->keepNullProperties = true;
         $this->debug = false;
     }
-	
+
     /**
      * {@inheritDoc}
      */
@@ -227,25 +227,25 @@ class Client extends \SoapClient
 	{
 		$this->cookies[ $name ] = $value;
 	}
-	
+
 	/**
 	 * Parse the cookies into a valid HTTP Cookie header value
-	 * 
+	 *
 	 * @return string
 	 */
 	protected function parseCookies ()
 	{
 		$cookie = '';
-		
+
 		foreach( $this->cookies as $name => $value )
 			$cookie .= $name . '=' . $value . '; ';
-				
+
 		return rtrim( $cookie, ';' );
 	}
-	
+
     /**
      * Set cURL Options
-     * 
+     *
      * @param array $curlOptions
      * @return \Camcima\Soap\Client
      */
@@ -257,7 +257,7 @@ class Client extends \SoapClient
 
     /**
      * Set User Agent
-     * 
+     *
      * @param string $userAgent
      * @return \Camcima\Soap\Client
      */
@@ -266,10 +266,10 @@ class Client extends \SoapClient
         $this->userAgent = $userAgent;
         return $this;
     }
-    
+
     /**
      * Set Content Type
-     * 
+     *
      * @param string $contentType
      * @return \Camcima\Soap\Client
      */
@@ -281,9 +281,9 @@ class Client extends \SoapClient
 
     /**
      * Lowercase first character of the root element name
-     * 
+     *
      * Defaults to false
-     * 
+     *
      * @param boolean $lowerCaseFirst
      * @return \Camcima\Soap\Client
      */
@@ -295,9 +295,9 @@ class Client extends \SoapClient
 
     /**
      * Keep null object properties when building the request parameters
-     * 
+     *
      * Defaults to true
-     * 
+     *
      * @param boolean $keepNullProperties
      * @return \Camcima\Soap\Client
      */
@@ -309,7 +309,7 @@ class Client extends \SoapClient
 
     /**
      * Set Debug Mode
-     * 
+     *
      * @param boolean $debug
      * @return \Camcima\Soap\Client
      */
@@ -321,7 +321,7 @@ class Client extends \SoapClient
 
     /**
      * Set Debug Log File Path
-     * 
+     *
      * @param string $debugLogFilePath
      * @return \Camcima\Soap\Client
      */
@@ -349,7 +349,7 @@ class Client extends \SoapClient
 
     /**
      * Merge Curl Options
-     * 
+     *
      * @return array
      */
     public function getCurlOptions()
@@ -410,7 +410,7 @@ class Client extends \SoapClient
 
     /**
      * Get Communication Log of Last Request
-     * 
+     *
      * @return string
      */
     public function getCommunicationLog()
@@ -420,7 +420,7 @@ class Client extends \SoapClient
 
     /**
      * Get Class Without Namespace Information
-     * 
+     *
      * @param mixed $object
      * @return string
      */
@@ -432,9 +432,9 @@ class Client extends \SoapClient
 
     /**
      * Convert Object to Array
-     * 
+     *
      * This method omits null value properties
-     * 
+     *
      * @param mixed $obj
      * @param boolean $keepNullProperties Keep null object properties when building the request parameters
      * @return array
@@ -467,7 +467,10 @@ class Client extends \SoapClient
      */
     protected function mapObject($obj, $className, $classMap = array(), $classNamespace = '')
     {
-        if (is_object($obj)) {
+        // If object is array of simple types just return inner array stored in item attribute
+        if (is_object($obj) && array_key_exists($className, $classMap) && $classMap[$className] === 'array') {
+            return isset($obj->item) ? is_array($obj->item) ? $obj->item : array($obj->item) : array();
+        } elseif (is_object($obj)) {
 
             // Check if there is a mapping.
             if (isset($classMap[$className])) {
@@ -563,9 +566,9 @@ class Client extends \SoapClient
 
     /**
      * Parse cURL response into header and body
-     * 
+     *
      * Inspired by shuber cURL wrapper.
-     * 
+     *
      * @param string $response
      * @return array
      */
@@ -585,7 +588,7 @@ class Client extends \SoapClient
 
     /**
      * Log cURL Debug Message
-     * 
+     *
      * @param string $message
      * @param \DateTime $messageTimestamp
      * @throws \RuntimeException

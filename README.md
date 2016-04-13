@@ -148,6 +148,18 @@ $mapping = array(
 
 The name of the property which holds the array serves as the marker for the mapping. You also need to prefix this element name with `array` and use pipe (`|`) to separate them.
 
+If we get array of simple type like
+```xml
+<xsd:element name="ForecastIcons" type="tns:ArrayOfString"/>
+```
+we need mapping to array, so it will extract data from `item` attribute (doesn't require `SOAP_SINGLE_ELEMENT_ARRAYS` feature in SoapClient)
+```php
+<?php
+$mapping = array(
+    'ForecastIcons' => 'array'
+);
+```
+
 #### Using Namespace ####
 
 If all your result classes reside in the same namespace, there is no need to map them individually. You can tell the mapper the namespace your classes live and it will automatically determine the mapping by matching the SOAP result names with the local class names.
