@@ -467,7 +467,10 @@ class Client extends \SoapClient
      */
     protected function mapObject($obj, $className, $classMap = array(), $classNamespace = '')
     {
-        if (is_object($obj)) {
+        // If object is array of simple types just return inner array stored in item attribute
+        if (is_object($obj) && array_key_exists($className, $classMap) && $classMap[$className] === 'array') {
+            return isset($obj->item) ? is_array($obj->item) ? $obj->item : array($obj->item) : array();
+        } elseif (is_object($obj)) {
 
             // Check if there is a mapping.
             if (isset($classMap[$className])) {
