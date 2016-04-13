@@ -469,9 +469,9 @@ class Client extends \SoapClient
     {
         // If object is array of simple types just return inner array stored in item attribute
         if (is_object($obj) && array_key_exists($className, $classMap) && $classMap[$className] === 'array') {
-            $result = json_decode(json_encode($obj), true);
-            $return = reset($result);
-            return is_array($return) ? $return : array($return);
+            $payload = json_decode(json_encode($obj), true);
+            $result = reset($payload);
+            return is_array($result) ? $result : array($result);
         } elseif (is_object($obj)) {
 
             // Check if there is a mapping.
