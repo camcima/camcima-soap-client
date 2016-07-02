@@ -120,8 +120,20 @@ class Client extends \SoapClient
      * @param string $wsdl
      * @param array $options
      */
-    function __construct($wsdl, array $options = array())
+    function __construct($wsdl, array $options = array(), $sslVerifyPeer = true)
     {
+        if (!$sslVerifyPeer)
+        {
+            $stream_context = stream_context_create(array(
+                'ssl' => array(
+                    'verify_peer'       => false,
+                    'verify_peer_name'  => false,
+                    'allow_self_signed' => true
+                    )
+                ));
+            $options['stream_context'] = $stream_context;
+        }
+        
         parent::__construct($wsdl, $options);
         $this->soapOptions = $options;
         $this->curlOptions = array();
