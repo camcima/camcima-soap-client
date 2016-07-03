@@ -9,8 +9,10 @@ This is my attempt to address the shortcommings of the native PHP SOAP Client im
 
 ```php
 <?php
-$soapClient = new \Camcima\Soap\Client($wsdl, $options);
+$soapClient = new \Camcima\Soap\Client($wsdl, $options, $sslVerifyPeer);
 ```
+
+The default value of sslVerifyPeer is `true`, which means that SSL certificate will be verified.  If WSDL file is hosted on a server that has an invalid SSL certificate or self-signed certificate, set `sslVerifyPeer` to `false`.
 
 ### cURL Options ###
 
