@@ -119,6 +119,7 @@ class Client extends \SoapClient
      * 
      * @param string $wsdl
      * @param array $options
+     * @param bool $sslVerifyPeer
      */
     function __construct($wsdl, array $options = array(), $sslVerifyPeer = true)
     {
