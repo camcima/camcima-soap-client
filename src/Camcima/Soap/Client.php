@@ -73,6 +73,20 @@ class Client extends \SoapClient
     protected $proxyPort;
 
     /**
+     * Proxy User
+     *
+     * @var string
+     */
+    protected $proxyUser;
+
+    /**
+     * Proxy Password
+     *
+     * @var string
+     */
+    protected $proxyPass;
+
+    /**
      * Lowercase first character of the root element name
      * 
      * @var boolean 
@@ -361,6 +375,21 @@ class Client extends \SoapClient
     }
 
     /**
+     * Set proxy auth data
+     *
+     * @param $user
+     * @param $passwd
+     * @return $this
+     */
+    public function setProxyAuth($user, $passwd)
+    {
+        $this->proxyUser = $user;
+        $this->proxyPass = $passwd;
+
+        return $this;
+    }
+
+    /**
      * Merge Curl Options
      * 
      * @return array
@@ -389,6 +418,7 @@ class Client extends \SoapClient
             $mergedArray[CURLOPT_PROXYTYPE] = $this->proxyType;
             $mergedArray[CURLOPT_PROXY] = $this->proxyHost;
             $mergedArray[CURLOPT_PROXYPORT] = $proxyPort;
+            $mergedArray[CURLOPT_PROXYUSERPWD] = 'test:NOnEYQau';
         }
 
         return $mergedArray;
