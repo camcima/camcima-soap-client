@@ -418,7 +418,7 @@ class Client extends \SoapClient
             $mergedArray[CURLOPT_PROXYTYPE] = $this->proxyType;
             $mergedArray[CURLOPT_PROXY] = $this->proxyHost;
             $mergedArray[CURLOPT_PROXYPORT] = $proxyPort;
-            $mergedArray[CURLOPT_PROXYUSERPWD] = 'test:NOnEYQau';
+            $mergedArray[CURLOPT_PROXYUSERPWD] = $this->proxyUser . ':' . $this->proxyPass";
         }
 
         return $mergedArray;
