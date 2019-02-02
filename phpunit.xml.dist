@@ -11,8 +11,14 @@
          bootstrap="./vendor/autoload.php"
 >
     <testsuites>
-        <testsuite name="Camcima Soap Client Test Suite">
-            <directory>./src/Camcima/Soap/Test/</directory>
+        <testsuite name="Camcima\\Soap">
+            <directory>./tests</directory>
         </testsuite>
     </testsuites>
+
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">src</directory>
+        </whitelist>
+    </filter>
 </phpunit>

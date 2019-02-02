@@ -1,41 +1,20 @@
 <?php
 
-namespace Camcima\Soap\Test;
+namespace Camcima\Tests;
 
 use Camcima\Soap\Client;
-use Camcima\Soap\Test\Fixtures\ParentClass;
-use Camcima\Soap\Test\Fixtures\ChildClass;
-use Camcima\Soap\Test\Fixtures\GetCityForecastByZIP;
+
+use Camcima\Tests\Fixtures\ChildClass;
+use Camcima\Tests\Fixtures\ParentClass;
+use Camcima\Tests\Fixtures\GetCityForecastByZIP;
 
 /**
  * SoapClientTest
  *
  * @author Carlos Cima <ccima@rocket-internet.com>
  */
-class ClientTest extends \PHPUnit_Framework_TestCase
+class ClientTest extends TestCase
 {
-    /**
-     * Soap Client Test Instance
-     * 
-     * @var \Camcima\Soap\Client 
-     */
-    protected $soapClient;
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function setUp()
-    {
-        parent::setUp();
-
-        $wsdl = __DIR__ . '/fixtures/sample.wsdl';
-        $options = array(
-            'trace' => false
-        );
-
-        $this->soapClient = new Client($wsdl, $options);
-    }
-
     /**
      * testConstruct
      */
@@ -50,6 +29,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function testInheritance()
     {
         $functions = $this->soapClient->__getFunctions();
+
         $this->assertInternalType('array', $functions);
         $this->assertCount(23, $functions);
     }
@@ -157,6 +137,15 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @expectedException   \Camcima\Exception\InvalidParameterException
+     * @expectedExceptionMessageRegExp /Parameter requestObject is not an object/
+     */
+    public function testGetSoapVariablesException()
+    {
+        $this->soapClient->getSoapVariables(null);
+    }
+
+    /**
      * testGetSoapVariablesWithOptions
      */
     public function testGetSoapVariablesWithOptions()
@@ -223,6 +212,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testDoRequest()
     {
+        $this->markTestIncomplete('Service WeatherWS Offline.');
+
         $wsdlUrl = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL';
         $actionName = 'GetCityForecastByZIP';
 
@@ -234,15 +225,15 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         $soapResult = $soapClient->GetCityForecastByZIP($getForecastByZip);
         $resultClassmap = array(
-            'GetCityForecastByZIPResult' => '\Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult',
-            'ForecastResult' => '\Camcima\Soap\Test\Fixtures\ForecastResult',
-            'array|Forecast' => '\Camcima\Soap\Test\Fixtures\ForecastEntry',
-            'Temperatures' => '\Camcima\Soap\Test\Fixtures\Temperatures',
-            'ProbabilityOfPrecipiation' => '\Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation'
+            'GetCityForecastByZIPResult' => '\Camcima\Tests\Fixtures\GetCityForecastByZIPResult',
+            'ForecastResult' => '\Camcima\Tests\Fixtures\ForecastResult',
+            'array|Forecast' => '\Camcima\Tests\Fixtures\ForecastEntry',
+            'Temperatures' => '\Camcima\Tests\Fixtures\Temperatures',
+            'ProbabilityOfPrecipiation' => '\Camcima\Tests\Fixtures\ProbabilityOfPrecipiation'
         );
         $getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap, '', true);
-        /* @var $getCityForecastByZIPResult \Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult', $getCityForecastByZIPResult);
+        /* @var $getCityForecastByZIPResult \Camcima\Tests\Fixtures\GetCityForecastByZIPResult */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\GetCityForecastByZIPResult', $getCityForecastByZIPResult);
         $this->assertTrue($getCityForecastByZIPResult->Success);
         $this->assertInternalType('string', $getCityForecastByZIPResult->ResponseText);
         $this->assertEquals('City Found', $getCityForecastByZIPResult->ResponseText);
@@ -252,24 +243,24 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Beverly Hills', $getCityForecastByZIPResult->City);
         $this->assertInternalType('string', $getCityForecastByZIPResult->WeatherStationCity);
         $forecastResult = $getCityForecastByZIPResult->ForecastResult;
-        /* @var $forecastResult \Camcima\Soap\Test\Fixtures\ForecastResult */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ForecastResult', $forecastResult);
+        /* @var $forecastResult \Camcima\Tests\Fixtures\ForecastResult */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\ForecastResult', $forecastResult);
         $this->assertInternalType('array', $forecastResult->Forecast);
         $forecasts = $forecastResult->Forecast;
         $firstForecast = reset($forecasts);
-        /* @var $firstForecast \Camcima\Soap\Test\Fixtures\ForecastEntry */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ForecastEntry', $firstForecast);
+        /* @var $firstForecast \Camcima\Tests\Fixtures\ForecastEntry */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\ForecastEntry', $firstForecast);
         $this->assertInstanceOf('\DateTime', $firstForecast->Date);
         $this->assertInternalType('int', $firstForecast->WeatherID);
         $this->assertInternalType('string', $firstForecast->Desciption);
         $temperatures = $firstForecast->Temperatures;
-        /* @var $temperatures \Camcima\Soap\Test\Fixtures\Temperatures */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\Temperatures', $temperatures);
+        /* @var $temperatures \Camcima\Tests\Fixtures\Temperatures */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\Temperatures', $temperatures);
         $this->assertInternalType('string', $temperatures->MorningLow);
         $this->assertInternalType('string', $temperatures->DaytimeHigh);
         $probPrecipitation = $firstForecast->ProbabilityOfPrecipiation;
-        /* @var $probPrecipitation \Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation', $probPrecipitation);
+        /* @var $probPrecipitation \Camcima\Tests\Fixtures\ProbabilityOfPrecipiation */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\ProbabilityOfPrecipiation', $probPrecipitation);
         $this->assertInternalType('string', $probPrecipitation->Nighttime);
         $this->assertInternalType('string', $probPrecipitation->Daytime);
     }
@@ -279,6 +270,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testDoRequestWithNamespace()
     {
+        $this->markTestIncomplete('Service WeatherWS Offline.');
+
         $wsdlUrl = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL';
         $actionName = 'GetCityForecastByZIP';
 
@@ -289,13 +282,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $getForecastByZip->ZIP = '90210';
 
         $soapResult = $soapClient->GetCityForecastByZIP($getForecastByZip);
-        $resultClassNamespace = '\Camcima\Soap\Test\Fixtures\\';
+        $resultClassNamespace = '\Camcima\Tests\Fixtures\\';
         $resultClassmap = array(
-            'array|Forecast' => '\Camcima\Soap\Test\Fixtures\ForecastEntry',
+            'array|Forecast' => '\Camcima\Tests\Fixtures\ForecastEntry',
         );
         $getCityForecastByZIPResult = $soapClient->mapSoapResult($soapResult, 'GetCityForecastByZIPResult', $resultClassmap, $resultClassNamespace, true);
-        /* @var $getCityForecastByZIPResult \Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\GetCityForecastByZIPResult', $getCityForecastByZIPResult);
+        /* @var $getCityForecastByZIPResult \Camcima\Tests\Fixtures\GetCityForecastByZIPResult */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\GetCityForecastByZIPResult', $getCityForecastByZIPResult);
         $this->assertTrue($getCityForecastByZIPResult->Success);
         $this->assertInternalType('string', $getCityForecastByZIPResult->ResponseText);
         $this->assertEquals('City Found', $getCityForecastByZIPResult->ResponseText);
@@ -305,34 +298,35 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Beverly Hills', $getCityForecastByZIPResult->City);
         $this->assertInternalType('string', $getCityForecastByZIPResult->WeatherStationCity);
         $forecastResult = $getCityForecastByZIPResult->ForecastResult;
-        /* @var $forecastResult \Camcima\Soap\Test\Fixtures\ForecastResult */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ForecastResult', $forecastResult);
+        /* @var $forecastResult \Camcima\Tests\Fixtures\ForecastResult */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\ForecastResult', $forecastResult);
         $this->assertInternalType('array', $forecastResult->Forecast);
         $forecasts = $forecastResult->Forecast;
         $firstForecast = reset($forecasts);
-        /* @var $firstForecast \Camcima\Soap\Test\Fixtures\ForecastEntry */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ForecastEntry', $firstForecast);
+        /* @var $firstForecast \Camcima\Tests\Fixtures\ForecastEntry */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\ForecastEntry', $firstForecast);
         $this->assertInstanceOf('\DateTime', $firstForecast->Date);
         $this->assertInternalType('int', $firstForecast->WeatherID);
         $this->assertInternalType('string', $firstForecast->Desciption);
         $temperatures = $firstForecast->Temperatures;
-        /* @var $temperatures \Camcima\Soap\Test\Fixtures\Temperatures */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\Temperatures', $temperatures);
+        /* @var $temperatures \Camcima\Tests\Fixtures\Temperatures */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\Temperatures', $temperatures);
         $this->assertInternalType('string', $temperatures->MorningLow);
         $this->assertInternalType('string', $temperatures->DaytimeHigh);
         $probPrecipitation = $firstForecast->ProbabilityOfPrecipiation;
-        /* @var $probPrecipitation \Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation */
-        $this->assertInstanceOf('\Camcima\Soap\Test\Fixtures\ProbabilityOfPrecipiation', $probPrecipitation);
+        /* @var $probPrecipitation \Camcima\Tests\Fixtures\ProbabilityOfPrecipiation */
+        $this->assertInstanceOf('\Camcima\Tests\Fixtures\ProbabilityOfPrecipiation', $probPrecipitation);
         $this->assertInternalType('string', $probPrecipitation->Nighttime);
         $this->assertInternalType('string', $probPrecipitation->Daytime);
     }
-
 
     /**
      * testDoRequestWithArrayResponse
      */
     public function testDoRequestWithArrayResponse()
     {
+        $this->markTestIncomplete('Service soap-server.pacura Offline.');
+
         $wsdlUrl = 'http://soap-server.pacura.pl/?wsdl';
         $soapClient = new Client($wsdlUrl);
 
@@ -342,5 +336,180 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertArrayHasKey(0, $icons);
         $this->assertInternalType('string', $icons[0]);
         $this->assertEquals('partly-cloudly.png', $icons[0]);
+    }
+
+    function testSetUserAgent()
+    {
+        $userAgent = 'PHPUnit';
+
+        $this->soapClient->setUserAgent($userAgent);
+
+        $this->assertEquals($userAgent, $this->soapClient->getUserAgent());
+    }
+
+    function testDefaultUserAgent()
+    {
+        $this->assertEquals(Client::DEFAULT_USER_AGENT, $this->soapClient->getUserAgent());
+    }
+
+    function testSetContentType()
+    {
+        $contentType = 'PHPUnit';
+
+        $this->soapClient->setContentType($contentType);
+
+        $this->assertEquals($contentType, $this->soapClient->getContentType());
+    }
+
+    function testDefaultContentType()
+    {
+        $this->assertEquals(Client::DEFAULT_CONTENT_TYPE, $this->soapClient->getContentType());
+    }
+
+    /**
+     *
+     */
+    function testParseCurlResponse()
+    {
+        $parseCurlResponse = self::getPrivateMethod('parseCurlResponse');
+
+        $curlResponse = "HTTP/2 200 \r\ndate: Sat, 02 Feb 2019 01:46:57 GMT\r\ncontent-type: text/xml; charset=UTF-8\r\n\r\n</xml>";
+
+        /** @var array $responseParsed */
+        $responseParsed = $parseCurlResponse->invoke($this->soapClient, $curlResponse);
+
+        $this->assertInternalType('array', $responseParsed);
+
+        $this->assertArrayHasKey('header', $responseParsed);
+        $this->assertArrayHasKey('body', $responseParsed);
+
+        $this->assertNotEmpty($responseParsed['header']);
+        $this->assertNotEmpty($responseParsed['body']);
+
+        $this->assertEquals("HTTP/2 200 \r\ndate: Sat, 02 Feb 2019 01:46:57 GMT\r\ncontent-type: text/xml; charset=UTF-8", $responseParsed['header']);
+        $this->assertEquals("</xml>", $responseParsed['body']);
+    }
+
+    function testgetSoapOption()
+    {
+        $setSoapOptions = self::getPrivateMethod('setSoapOptions');
+        $getSoapOptions = self::getPrivateMethod('getSoapOptions');
+        $setSoapOptions->invoke($this->soapClient, array('a' => 'b'));
+        $soapOption = $getSoapOptions->invoke($this->soapClient, 'a');
+
+        $this->assertEquals('b', $soapOption);
+    }
+
+    function testgetSoapOptions()
+    {
+        $setSoapOptions = self::getPrivateMethod('setSoapOptions');
+        $getSoapOptions = self::getPrivateMethod('getSoapOptions');
+        $setSoapOptions->invoke($this->soapClient, array('a' => 'b'));
+        $soapOptions = $getSoapOptions->invoke($this->soapClient);
+
+        $this->assertInternalType('array', $soapOptions);
+        $this->assertArrayHasKey('a', $soapOptions);
+        $this->assertEquals('b', $soapOptions['a']);
+    }
+
+    /**
+     * @expectedException   \Camcima\Exception\InvalidSoapOptionException
+     * @expectedExceptionMessageRegExp /Soap option '\w+' invalid./
+     */
+    function testGetInvalidSoapOption()
+    {
+        $getSoapOptions = self::getPrivateMethod('getSoapOptions');
+        $getSoapOptions->invoke($this->soapClient, 'abc');
+    }
+
+    function testSetCookies()
+    {
+        $this->soapClient->__setCookie('cookie', 'value');
+
+        $parseCookies = self::getPrivateMethod('parseCookies');
+        $cookieString = $parseCookies->invoke($this->soapClient);
+
+        $this->assertEquals('cookie=value; ', $cookieString);
+    }
+
+    function testSetCustoUserAgent()
+    {
+        $this->soapClient->setUserAgent('user-agent');
+
+        $this->assertEquals('user-agent', $this->soapClient->getUserAgent());
+    }
+
+    function testGetLowerCaseFirst()
+    {
+        $this->soapClient->setLowerCaseFirst(true);
+
+        $this->assertTrue($this->soapClient->getLowerCaseFirst());
+    }
+
+    function testSetKeepNullProperties()
+    {
+        $this->soapClient->setKeepNullProperties(false);
+
+        $this->assertFalse($this->soapClient->getKeepNullProperties());
+    }
+
+    function testSetDebugMode()
+    {
+        $this->soapClient->setDebug(true);
+
+        $method = self::getPrivateMethod('hasEnabledDebugMode');
+        $hasEnabledDebugMode = $method->invoke($this->soapClient, true);
+
+        $this->assertTrue($hasEnabledDebugMode);
+    }
+
+    function testSetDebugLogFilePath()
+    {
+        $this->soapClient->setDebugLogFilePath('somefile.log');
+
+        $method = self::getPrivateMethod('getDebugLogFilePath');
+        $debugLogFilePath = $method->invoke($this->soapClient);
+
+        $this->assertEquals('somefile.log', $debugLogFilePath);
+    }
+
+    function testSetProxyAuth()
+    {
+        $this->soapClient->setProxyAuth('user', 'password');
+
+        $method = self::getPrivateMethod('getProxyUserPwd');
+        $proxyAuth = $method->invoke($this->soapClient);
+
+        $this->assertEquals('user:password', $proxyAuth);
+    }
+
+    function testSoapUserPasswordString()
+    {
+        $setSoapOptions = self::getPrivateMethod('setSoapOptions');
+        $getSoapUserPasswordString = self::getPrivateMethod('getSoapUserPasswordString');
+        $setSoapOptions->invoke($this->soapClient, array('login' => 'user', 'password' => 'password'));
+
+
+        $string = $getSoapUserPasswordString->invoke($this->soapClient);
+
+        $this->assertEquals('user:password', $string);
+    }
+
+    function testSoapUserPasswordStringIfIsNull()
+    {
+        $getSoapUserPasswordString = self::getPrivateMethod('getSoapUserPasswordString');
+        $string = $getSoapUserPasswordString->invoke($this->soapClient);
+
+        $this->assertNull($string);
+    }
+
+    function testSetCommunicationLog()
+    {
+        $setCommunicationLog = self::getPrivateMethod('setCommunicationLog');
+        $setCommunicationLog->invoke($this->soapClient, 'some string');
+
+        $log = $this->soapClient->getCommunicationLog();
+
+        $this->assertEquals('some string', $log);
     }
 }

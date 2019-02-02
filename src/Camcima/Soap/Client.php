@@ -2,10 +2,14 @@
 
 namespace Camcima\Soap;
 
-use Camcima\Exception\InvalidClassMappingException;
-use Camcima\Exception\InvalidParameterException;
-use Camcima\Exception\MissingClassMappingException;
+use DateTime;
+use RuntimeException;
+use ReflectionException;
 use Camcima\Exception\ConnectionErrorException;
+use Camcima\Exception\InvalidParameterException;
+use Camcima\Exception\InvalidSoapOptionException;
+use Camcima\Exception\InvalidClassMappingException;
+use Camcima\Exception\MissingClassMappingException;
 
 /**
  * Soap Client
@@ -18,7 +22,7 @@ class Client extends \SoapClient
      * Default Values
      */
     const DEFAULT_USER_AGENT = 'CamcimaSoapClient/1.0';
-    const DEFAULT_CONTENT_TYPE = 'text/xml; charset=utf-8';
+    const DEFAULT_CONTENT_TYPE = 'text/xml; charset=UTF-8';
     const DEFAULT_PROXY_TYPE = CURLPROXY_HTTP;
     const DEFAULT_PROXY_HOST = 'localhost';
     const DEFAULT_PROXY_PORT = 8888;
@@ -49,7 +53,7 @@ class Client extends \SoapClient
      * 
      * @var array 
      */
-    protected $curlOptions;
+    protected $curlOptions = array();
 
     /**
      * Proxy Type
@@ -70,21 +74,21 @@ class Client extends \SoapClient
      * 
      * @var int 
      */
-    protected $proxyPort;
+    protected $proxyPort = self::DEFAULT_PROXY_PORT;
 
     /**
      * Proxy User
      *
-     * @var string
+     * @var mixed
      */
     protected $proxyUser;
 
     /**
      * Proxy Password
      *
-     * @var string
+     * @var mixed
      */
-    protected $proxyPass;
+    protected $proxyPassword;
 
     /**
      * Lowercase first character of the root element name
@@ -98,14 +102,14 @@ class Client extends \SoapClient
      *  
      * @var boolean 
      */
-    protected $keepNullProperties;
+    protected $keepNullProperties = true;
 
     /**
      * Debug Mode
      * 
      * @var boolean 
      */
-    protected $debug;
+    protected $debug = false;
 
     /**
      * Debug Log File Path
@@ -126,35 +130,89 @@ class Client extends \SoapClient
      * 
      * @var array 
      */
-    protected $soapOptions;
+    protected $soapOptions = array();
 
     /**
-     * Constructor
-     * 
-     * @param string $wsdl
+     * Client constructor.
+     * @param $wsdl
      * @param array $options
      * @param bool $sslVerifyPeer
+     * @param bool $debugMode
+     * @param bool $keepNullProperties
      */
-    function __construct($wsdl, array $options = array(), $sslVerifyPeer = true)
+    function __construct($wsdl, array $options = array(), $sslVerifyPeer = true, $debugMode = false, $keepNullProperties = true)
     {
-        if (!$sslVerifyPeer)
-        {
+        if ($sslVerifyPeer === false) {
             $stream_context = stream_context_create(array(
                 'ssl' => array(
-                    'verify_peer'       => false,
-                    'verify_peer_name'  => false,
-                    'allow_self_signed' => true
+                        'verify_peer'       => false,
+                        'verify_peer_name'  => false,
+                        'allow_self_signed' => true
                     )
                 ));
+
             $options['stream_context'] = $stream_context;
         }
-        
-        parent::__construct($wsdl, $options);
+
+        $this->setSoapOptions($options);
+        $this->setCurlOptions(array());
+        $this->setLowerCaseFirst(false);
+        $this->setKeepNullProperties($keepNullProperties);
+        $this->setDebug($debugMode);
+
+        parent::__construct($wsdl, $this->getSoapOptions());
+    }
+
+    /**
+     * @param array $options
+     */
+    private function setSoapOptions($options = array())
+    {
         $this->soapOptions = $options;
-        $this->curlOptions = array();
-        $this->lowerCaseFirst = false;
-        $this->keepNullProperties = true;
-        $this->debug = false;
+    }
+
+    /**
+     * @param $option
+     * @return bool
+     */
+    private function hasSoapOption($option)
+    {
+        return array_key_exists($option, $this->soapOptions);
+    }
+
+    /**
+     * @param null $option
+     * @return array|mixed
+     * @throws InvalidSoapOptionException
+     */
+    private function getSoapOptions($option = null)
+    {
+        if(!is_null($option)){
+            if($this->hasSoapOption($option)) {
+                return $this->soapOptions[ $option ];
+            } else {
+                throw new InvalidSoapOptionException(sprintf('Soap option \'%s\' invalid.', $option));
+            }
+        }
+
+        return $this->soapOptions;
+    }
+
+    /**
+     * @return string|null
+     * @throws InvalidSoapOptionException
+     */
+    private function getSoapUserPasswordString()
+    {
+        if ($this->hasSoapOption('login') && $this->hasSoapOption('password')) {
+            $login = $this->getSoapOptions('login');
+            $password = $this->getSoapOptions('password');
+
+            // return login and password in soap format
+            return sprintf('%s:%s', $login, $password);
+        }
+
+        return null;
     }
 	
     /**
@@ -162,8 +220,8 @@ class Client extends \SoapClient
      */
     public function __doRequest($request, $location, $action, $version, $one_way = 0)
     {
-        $userAgent = $this->userAgent ? : self::DEFAULT_USER_AGENT;
-        $contentType = $this->contentType ? : self::DEFAULT_CONTENT_TYPE;
+        $userAgent = $this->getUserAgent();
+        $contentType = $this->getContentType();
 
         $headers = array(
             'Connection: Close',
@@ -174,22 +232,23 @@ class Client extends \SoapClient
         );
 
         $soapRequest = is_object($request) ?
-            $this->getSoapVariables($request, $this->lowerCaseFirst, $this->keepNullProperties) :
+            $this->getSoapVariables($request, $this->getLowerCaseFirst(), $this->getKeepNullProperties()) :
             $request;
 
         $curlOptions = $this->getCurlOptions();
+
         $curlOptions[CURLOPT_POSTFIELDS] = $soapRequest;
         $curlOptions[CURLOPT_HTTPHEADER] = $headers;
         $curlOptions[CURLINFO_HEADER_OUT] = true;
         $curlOptions[CURLOPT_COOKIE] = $this->parseCookies();
 
-        if (isset($this->soapOptions['login']) && isset($this->soapOptions['password'])) {
-            $curlOptions[CURLOPT_USERPWD] = $this->soapOptions['login'] . ':' . $this->soapOptions['password'];
+        if ($this->hasSoapOption('login') && $this->hasSoapOption('password')) {
+            $curlOptions[CURLOPT_USERPWD] = $this->getSoapUserPasswordString();
         }
 
         $ch = curl_init($location);
         curl_setopt_array($ch, $curlOptions);
-        $requestDateTime = new \DateTime();
+        $requestDateTime = new DateTime();
         try {
             $response = curl_exec($ch);
         } catch (\Exception $e) {
@@ -203,12 +262,16 @@ class Client extends \SoapClient
         }
         $requestMessage = curl_getinfo($ch, CURLINFO_HEADER_OUT) . $soapRequest;
         $parsedResponse = $this->parseCurlResponse($response);
-        if ($this->debug) {
+
+        if ($this->hasEnabledDebugMode()) {
             $this->logCurlMessage($requestMessage, $requestDateTime);
-            $this->logCurlMessage($response, new \DateTime());
+            $this->logCurlMessage($response, new DateTime());
         }
-        $this->communicationLog = $requestMessage . "\n\n" . $response;
+
+        $this->setCommunicationLog($requestMessage . "\n\n" . $response);
+
         $body = $parsedResponse['body'];
+
         curl_close($ch);
 
         return $body;
@@ -279,6 +342,7 @@ class Client extends \SoapClient
     public function setCurlOptions(array $curlOptions)
     {
         $this->curlOptions = $curlOptions;
+
         return $this;
     }
 
@@ -291,7 +355,18 @@ class Client extends \SoapClient
     public function setUserAgent($userAgent = self::DEFAULT_USER_AGENT)
     {
         $this->userAgent = $userAgent;
+
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUserAgent()
+    {
+        $userAgent = $this->userAgent ? $this->userAgent : self::DEFAULT_USER_AGENT;
+
+        return $userAgent;
     }
     
     /**
@@ -303,7 +378,18 @@ class Client extends \SoapClient
     public function setContentType($contentType = self::DEFAULT_CONTENT_TYPE)
     {
         $this->contentType = $contentType;
+
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getContentType()
+    {
+        $contentType = $this->contentType ? $this->contentType : self::DEFAULT_CONTENT_TYPE;
+
+        return $contentType;
     }
 
     /**
@@ -317,7 +403,16 @@ class Client extends \SoapClient
     public function setLowerCaseFirst($lowerCaseFirst)
     {
         $this->lowerCaseFirst = $lowerCaseFirst;
+
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getLowerCaseFirst()
+    {
+        return $this->lowerCaseFirst;
     }
 
     /**
@@ -331,7 +426,16 @@ class Client extends \SoapClient
     public function setKeepNullProperties($keepNullProperties)
     {
         $this->keepNullProperties = $keepNullProperties;
+
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getKeepNullProperties()
+    {
+        return $this->keepNullProperties;
     }
 
     /**
@@ -343,7 +447,16 @@ class Client extends \SoapClient
     public function setDebug($debug = false)
     {
         $this->debug = $debug;
+
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    private function hasEnabledDebugMode()
+    {
+        return $this->debug;
     }
 
     /**
@@ -355,7 +468,16 @@ class Client extends \SoapClient
     public function setDebugLogFilePath($debugLogFilePath)
     {
         $this->debugLogFilePath = $debugLogFilePath;
+
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    private function getDebugLogFilePath()
+    {
+        return $this->debugLogFilePath;
     }
 
     /**
@@ -368,9 +490,10 @@ class Client extends \SoapClient
      */
     public function useProxy($host = self::DEFAULT_PROXY_HOST, $port = self::DEFAULT_PROXY_PORT, $type = self::DEFAULT_PROXY_TYPE)
     {
-        $this->proxyType = $type;
-        $this->proxyHost = $host;
-        $this->proxyPort = $port;
+        $this->setProxyType($type);
+        $this->setProxyHost($host);
+        $this->setProxyPort($port);
+
         return $this;
     }
 
@@ -378,15 +501,111 @@ class Client extends \SoapClient
      * Set proxy auth data
      *
      * @param $user
-     * @param $passwd
+     * @param $password
      * @return $this
      */
-    public function setProxyAuth($user, $passwd)
+    public function setProxyAuth($user, $password)
     {
-        $this->proxyUser = $user;
-        $this->proxyPass = $passwd;
+        $this->setProxyUser($user);
+        $this->setProxyPassword($password);
 
         return $this;
+    }
+
+    /**
+     * @param $host
+     */
+    private function setProxyHost($host)
+    {
+        $this->proxyHost = $host;
+    }
+
+    /**
+     * @return string
+     */
+    private function getProxyHost()
+    {
+        return $this->proxyHost;
+    }
+
+    /**
+     * @param $type
+     */
+    private function setProxyType($type)
+    {
+        $this->proxyType = $type;
+    }
+
+    /**
+     * @return string
+     */
+    private function getProxyType()
+    {
+        return $this->proxyType;
+    }
+
+    /**
+     * @param $port
+     */
+    private function setProxyPort($port)
+    {
+        $this->proxyPort = $port;
+    }
+
+    /**
+     * @return string
+     */
+    private function getProxyPort()
+    {
+        return $this->proxyPort;
+    }
+
+    /**
+     * @param mixed $user
+     */
+    private function setProxyUser($user)
+    {
+        $this->proxyUser = $user;
+    }
+
+    /**
+     * @param mixed $user
+     */
+    private function setProxyPassword($password)
+    {
+        $this->proxyPassword = $password;
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getProxyUser()
+    {
+        return $this->proxyUser;
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getProxyPassword()
+    {
+        return $this->proxyPassword;
+    }
+
+    /**
+     * @return string
+     */
+    private function getProxyUserPwd()
+    {
+        return $this->getProxyUser() . ':' . $this->getProxyPassword();
+    }
+
+    /**
+     * @return bool
+     */
+    private function hasProxyConfigured()
+    {
+        return (strlen($this->proxyHost) > 0);
     }
 
     /**
@@ -407,21 +626,16 @@ class Client extends \SoapClient
             CURLOPT_SSL_VERIFYPEER => false
         );
 
-        $mergedArray = $mandatoryOptions + $this->curlOptions + $defaultOptions;
+        $curlOptions = ($mandatoryOptions + $this->curlOptions + $defaultOptions);
 
-        if (strlen($this->proxyHost) > 0) {
-            if (strlen($this->proxyPort) > 0) {
-                $proxyPort = $this->proxyPort;
-            } else {
-                $proxyPort = 8888;
-            }
-            $mergedArray[CURLOPT_PROXYTYPE] = $this->proxyType;
-            $mergedArray[CURLOPT_PROXY] = $this->proxyHost;
-            $mergedArray[CURLOPT_PROXYPORT] = $proxyPort;
-            $mergedArray[CURLOPT_PROXYUSERPWD] = $this->proxyUser . ':' . $this->proxyPass;
+        if ($this->hasProxyConfigured()) {
+            $curlOptions[CURLOPT_PROXYTYPE] = $this->getProxyType();
+            $curlOptions[CURLOPT_PROXY] = $this->getProxyHost();
+            $curlOptions[CURLOPT_PROXYPORT] = $this->getProxyPort();
+            $curlOptions[CURLOPT_PROXYUSERPWD] = $this->getProxyUserPwd();
         }
 
-        return $mergedArray;
+        return $curlOptions;
     }
 
     /**
@@ -462,6 +676,14 @@ class Client extends \SoapClient
     }
 
     /**
+     * @param string $log
+     */
+    private function setCommunicationLog($log)
+    {
+        $this->communicationLog = $log;
+    }
+
+    /**
      * Get Class Without Namespace Information
      * 
      * @param mixed $object
@@ -470,6 +692,7 @@ class Client extends \SoapClient
     protected function getClassNameWithoutNamespaces($object)
     {
         $class = explode('\\', get_class($object));
+
         return end($class);
     }
 
@@ -560,7 +783,7 @@ class Client extends \SoapClient
                         $setterName = 'set' . $key;
 
                         // Check if parameter is \DateTime
-                        $reflection = new \ReflectionMethod($mappedClassName, $setterName);
+                        $reflection = new ReflectionMethod($mappedClassName, $setterName);
                         $params = $reflection->getParameters();
                         if (count($params) != 1) {
                             throw new InvalidClassMappingException('Wrong Argument Count in Setter for property ' . $key);
@@ -571,14 +794,14 @@ class Client extends \SoapClient
                         // Get the parameter class (if type-hinted)
                         try {
                             $paramClass = $param->getClass();
-                        } catch (\ReflectionException $e) {
-                            throw new \ReflectionException('Invalid type hint for method "' . $setterName . '"');
+                        } catch (ReflectionException $e) {
+                            throw new ReflectionException('Invalid type hint for method "' . $setterName . '"');
                         }
                         if ($paramClass) {
                             $paramClassName = $paramClass->getNamespaceName() . '\\' . $param->getClass()->getName();
                             // If setter parameter is typehinted, cast the value before calling the method
                             if ($paramClassName == '\DateTime') {
-                                $val = new \DateTime($val);
+                                $val = new DateTime($val);
                             }
                         }
 
@@ -619,15 +842,12 @@ class Client extends \SoapClient
      */
     protected function parseCurlResponse($response)
     {
-        $pattern = '|HTTP/\d\.\d.*?$.*?\r\n\r\n|ims';
-        preg_match_all($pattern, $response, $matches);
-        $header = array_pop($matches[0]);
-        # Remove headers from the response body
-        $body = str_replace($header, '', $response);
+        $result = explode("\r\n\r\n", $response);
 
+        // split headers / body parts
         return array(
-            'header' => $header,
-            'body' => $body,
+            'header' => $result[0],
+            'body' => $result[1],
         );
     }
 
@@ -638,13 +858,13 @@ class Client extends \SoapClient
      * @param \DateTime $messageTimestamp
      * @throws \RuntimeException
      */
-    protected function logCurlMessage($message, \DateTime $messageTimestamp)
+    protected function logCurlMessage($message, DateTime $messageTimestamp)
     {
-        if (!$this->debugLogFilePath) {
-            throw new \RuntimeException('Debug log file path not defined.');
+        if (!$debugFilePath = $this->getDebugLogFilePath()) {
+            throw new RuntimeException('Debug log file path not defined.');
         }
         $logMessage = '[' . $messageTimestamp->format('Y-m-d H:i:s') . "] ----------------------------------------------------------\n" . $message . "\n\n";
-        $logHandle = fopen($this->debugLogFilePath, 'a+');
+        $logHandle = fopen($debugFilePath, 'a+');
         fwrite($logHandle, $logMessage);
         fclose($logHandle);
     }
