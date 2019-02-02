@@ -79,14 +79,14 @@ class Client extends \SoapClient
     /**
      * Proxy User
      *
-     * @var mixed
+     * @var string|int
      */
     protected $proxyUser;
 
     /**
      * Proxy Password
      *
-     * @var mixed
+     * @var string|int
      */
     protected $proxyPassword;
 
@@ -182,7 +182,7 @@ class Client extends \SoapClient
 
     /**
      * @param null $option
-     * @return array|mixed
+     * @return string|int|string
      * @throws InvalidSoapOptionException
      */
     private function getSoapOptions($option = null)
@@ -561,7 +561,7 @@ class Client extends \SoapClient
     }
 
     /**
-     * @param mixed $user
+     * @param string|int $user
      */
     private function setProxyUser($user)
     {
@@ -569,7 +569,7 @@ class Client extends \SoapClient
     }
 
     /**
-     * @param mixed $user
+     * @param string|int $user
      */
     private function setProxyPassword($password)
     {
@@ -577,7 +577,7 @@ class Client extends \SoapClient
     }
 
     /**
-     * @return mixed
+     * @return string|int
      */
     private function getProxyUser()
     {
@@ -585,7 +585,7 @@ class Client extends \SoapClient
     }
 
     /**
-     * @return mixed
+     * @return string|int
      */
     private function getProxyPassword()
     {
