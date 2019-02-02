@@ -182,7 +182,7 @@ class Client extends \SoapClient
 
     /**
      * @param null $option
-     * @return string|int|string
+     * @return string|int
      * @throws InvalidSoapOptionException
      */
     private function getSoapOptions($option = null)
