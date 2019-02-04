@@ -1,6 +1,6 @@
 <?php
 
-namespace Camcima\Soap\Test\Fixtures;
+namespace Camcima\Tests\Fixtures;
 
 /**
  * GetCityForecastByZIPResult Class Firxture

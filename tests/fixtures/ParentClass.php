@@ -1,6 +1,6 @@
 <?php
 
-namespace Camcima\Soap\Test\Fixtures;
+namespace Camcima\Tests\Fixtures;
 
 /**
  * ParentClass Fixture
@@ -43,8 +43,8 @@ class ParentClass
     /**
      * Add Children
      * 
-     * @param \Camcima\Soap\Test\Fixtures\ChildClass $children
-     * @return \Camcima\Soap\Test\Fixtures\ParentClass
+     * @param \Camcima\Tests\Fixtures\ChildClass $children
+     * @return \Camcima\Tests\Fixtures\ParentClass
      */
     public function addChildren(ChildClass $children)
     {
@@ -55,8 +55,8 @@ class ParentClass
     /**
      * Set Special Child
      * 
-     * @param \Camcima\Soap\Test\Fixtures\ChildClass $eldestChild
-     * @return \Camcima\Soap\Test\Fixtures\ParentClass
+     * @param \Camcima\Tests\Fixtures\ChildClass $eldestChild
+     * @return \Camcima\Tests\Fixtures\ParentClass
      */
     public function setEldestChild(ChildClass $eldestChild)
     {
