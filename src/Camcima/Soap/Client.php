@@ -10,6 +10,7 @@ use Camcima\Exception\InvalidParameterException;
 use Camcima\Exception\InvalidSoapOptionException;
 use Camcima\Exception\InvalidClassMappingException;
 use Camcima\Exception\MissingClassMappingException;
+use ReflectionMethod;
 
 /**
  * Soap Client
@@ -182,7 +183,7 @@ class Client extends \SoapClient
 
     /**
      * @param null $option
-     * @return string|int
+     * @return array
      * @throws InvalidSoapOptionException
      */
     private function getSoapOptions($option = null)
@@ -782,7 +783,6 @@ class Client extends \SoapClient
                     if ($useSetter) {
                         $setterName = 'set' . $key;
 
-                        // Check if parameter is \DateTime
                         $reflection = new ReflectionMethod($mappedClassName, $setterName);
                         $params = $reflection->getParameters();
                         if (count($params) != 1) {
