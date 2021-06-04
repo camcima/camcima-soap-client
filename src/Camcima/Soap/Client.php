@@ -132,8 +132,6 @@ class Client extends \SoapClient
      */
     protected $soapOptions = array();
 
-    protected $wsdlOverSsl = false;
-
     /**
      * Client constructor.
      * @param $wsdl
@@ -144,12 +142,6 @@ class Client extends \SoapClient
      */
     function __construct($wsdl, array $options = array(), $sslVerifyPeer = true, $debugMode = false, $keepNullProperties = true)
     {
-        $wsdlParsed = parse_url($wsdl);
-
-        if($wsdlParsed['scheme'] == 'https') {
-            $this->wsdlOverSsl = true;
-        }
-
         if ($sslVerifyPeer === false) {
             $stream_context = stream_context_create(array(
                 'ssl' => array(
@@ -228,11 +220,6 @@ class Client extends \SoapClient
      */
     public function __doRequest($request, $location, $action, $version, $one_way = 0)
     {
-        if($this->wsdlOverSsl) {
-            // just to insure the request will be maybe over SSL
-            $location = preg_replace("/^http:/i", "https:", $location);
-        }
-
         $userAgent = $this->getUserAgent();
         $contentType = $this->getContentType();
 
