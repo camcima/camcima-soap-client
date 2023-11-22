@@ -218,7 +218,7 @@ class Client extends \SoapClient
     /**
      * {@inheritDoc}
      */
-    public function __doRequest($request, $location, $action, $version, $one_way = 0)
+    public function __doRequest($request, $location, $action, $version, $one_way = 0) : ?string
     {
         $userAgent = $this->getUserAgent();
         $contentType = $this->getContentType();
@@ -313,7 +313,7 @@ class Client extends \SoapClient
 	/**
 	 * {@inheritDoc}
 	 */
-	public function __setCookie( $name, $value = null )
+	public function __setCookie( $name, $value = null ) : void
 	{
 		$this->cookies[ $name ] = $value;
 	}
